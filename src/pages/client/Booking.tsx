@@ -5,7 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import BarberPlaceholder from "../../components/common/BarberPlaceholder";
 import ServiceIcon from "../../components/common/ServiceIcon";
 import { useAuth } from "../../lib/auth";
-import { getAvailableSlots } from "../../lib/availability";
+import { findAvailableBarberId, getAvailableSlots, hasBarberConflict } from "../../lib/availability";
 import { addMinutes, money, nextBusinessDayIso, nextBusinessDaysIso } from "../../lib/format";
 import { createAppointment, readDb } from "../../lib/store";
 
@@ -38,10 +38,24 @@ export default function Booking() {
   const bookingPrice = service.price + extras.reduce((sum, item) => sum + item.price, 0);
   const bookingDuration = service.durationMinutes + extras.reduce((sum, item) => sum + item.durationMinutes, 0);
   const barber = barberId ? db.barbers.find((item) => item.id === barberId) : null;
-  const slots = useMemo(() => getAvailableSlots({ date, barberId, duration: bookingDuration, workingHours: db.workingHours, appointments: db.appointments, daysOff: db.barberDaysOff }), [date, barberId, bookingDuration]);
+  const slots = useMemo(() => getAvailableSlots({ date, barberId, duration: bookingDuration, barbers: db.barbers, workingHours: db.workingHours, appointments: db.appointments, daysOff: db.barberDaysOff }), [date, barberId, bookingDuration]);
   const dates = nextBusinessDaysIso(12);
   function confirmBooking() {
-    createAppointment({ customerId: user!.id, barberId: barberId ?? db.barbers[0].id, serviceId: service.id, appointmentDate: date, startTime: time, endTime: addMinutes(time, bookingDuration), price: bookingPrice, status: "confirmed", notes: extras.length ? `Adicionais: ${extras.map((item) => item.name).join(", ")}` : "Somente corte base" });
+    const endTime = addMinutes(time, bookingDuration);
+    const assignedBarberId = barberId ?? findAvailableBarberId({ barbers: db.barbers, appointments: db.appointments, workingHours: db.workingHours, daysOff: db.barberDaysOff, date, startTime: time, endTime });
+    if (!assignedBarberId) {
+      alert("Esse horário acabou de ficar indisponível. Escolha outro horário.");
+      setTime("");
+      setStep(4);
+      return;
+    }
+    if (hasBarberConflict({ appointments: readDb().appointments, barberId: assignedBarberId, date, startTime: time, endTime })) {
+      alert("Esse barbeiro já tem agendamento nesse horário. Escolha outro horário.");
+      setTime("");
+      setStep(4);
+      return;
+    }
+    createAppointment({ customerId: user!.id, barberId: assignedBarberId, serviceId: service.id, appointmentDate: date, startTime: time, endTime, price: bookingPrice, status: "confirmed", notes: extras.length ? `Adicionais: ${extras.map((item) => item.name).join(", ")}` : "Somente corte base" });
     setDone(true);
   }
   if (done) return <div className="card card-pad" style={{ maxWidth: 680 }}><CheckCircle2 color="var(--ok)" size={44} /><h1 className="font-display">Agendamento confirmado!</h1><p className="muted">{bookingName} em {date} às {time}.</p><button className="btn" onClick={() => downloadIcs(bookingName, date, time, bookingDuration)}>Adicionar ao calendário</button> <Link className="btn primary" to="/app">Voltar ao dashboard</Link></div>;

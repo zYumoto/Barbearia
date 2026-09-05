@@ -1,4 +1,5 @@
 import { addDaysIso, addMinutes, nextBusinessDayIso, todayIso } from "./format";
+import { hasBarberConflict } from "./availability";
 import type { Appointment, AppointmentStatus, Barber, Database, Payment, Profile, Service } from "./types";
 
 const DB_KEY = "mt-barbearia-db-v3";
@@ -197,6 +198,9 @@ export function updateProfile(profile: Profile) {
 
 export function createAppointment(appointment: Omit<Appointment, "id" | "createdAt">) {
   const db = readDb();
+  if (appointment.barberId && hasBarberConflict({ appointments: db.appointments, barberId: appointment.barberId, date: appointment.appointmentDate, startTime: appointment.startTime, endTime: appointment.endTime })) {
+    throw new Error("Esse barbeiro já possui um agendamento nesse horário.");
+  }
   const created = { ...appointment, id: id("apt"), createdAt: new Date().toISOString() };
   db.appointments.push(created);
   writeDb(db);
