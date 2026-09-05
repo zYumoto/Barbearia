@@ -15,6 +15,7 @@ export default function Booking() {
   const db = readDb();
   const [step, setStep] = useState(1);
   const [serviceId, setServiceId] = useState(params.get("service") ?? user?.favoriteServiceId ?? db.services[0]?.id);
+  const [serviceQuery, setServiceQuery] = useState("");
   const [barberId, setBarberId] = useState<string | null>(params.get("barber") ?? user?.favoriteBarberId ?? null);
   const [date, setDate] = useState(nextBusinessDayIso());
   const [time, setTime] = useState("");
@@ -32,12 +33,62 @@ export default function Booking() {
     <div className="grid">
       <div><div className="eyebrow">Novo agendamento</div><h1 className="font-display">Escolha seu horário</h1></div>
       <div className="badge">Etapa {step} de 5</div>
-      {step === 1 && <Picker items={db.services.filter((item) => item.active)} selected={serviceId} onSelect={(id) => { setServiceId(id); setTime(""); }} render={(item) => <><ServiceIcon iconKey={item.iconKey} /><h3>{item.name}</h3><p className="muted">{item.description}</p><strong>{money.format(item.price)} · {item.durationMinutes} min</strong></>} />}
+      {step === 1 && (
+        <ServiceStep
+          services={db.services.filter((item) => item.active)}
+          selected={serviceId}
+          query={serviceQuery}
+          onQuery={setServiceQuery}
+          onSelect={(id) => { setServiceId(id); setTime(""); }}
+        />
+      )}
       {step === 2 && <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}><button className={`card card-pad ${barberId === null ? "selected-card" : ""}`} onClick={() => setBarberId(null)}><h3>Qualquer profissional disponível</h3><p className="muted">A equipe escolhe o melhor encaixe.</p></button>{db.barbers.filter((item) => item.active).map((item) => <button className={`card card-pad ${barberId === item.id ? "selected-card" : ""}`} key={item.id} onClick={() => setBarberId(item.id)}><BarberPlaceholder name={item.name} /><h3>{item.name}</h3><p className="muted">{item.specialties.join(", ")}</p></button>)}</div>}
       {step === 3 && <Picker className="date-picker-grid" itemClassName="date-choice" items={dates.map((item) => ({ id: item, name: new Date(`${item}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) }))} selected={date} onSelect={(id) => { setDate(id); setTime(""); }} render={(item) => <h3>{item.name}</h3>} />}
       {step === 4 && <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))" }}>{slots.map((slot) => <button className={`btn ${time === slot.time ? "primary" : ""}`} disabled={slot.disabled} key={slot.time} onClick={() => setTime(slot.time)}>{slot.time}</button>)}</div>}
       {step === 5 && <div className="card card-pad"><h2>Resumo</h2><p><strong>{service.name}</strong> com {barber?.name ?? "qualquer profissional"}</p><p className="muted">{date} às {time} · {money.format(service.price)}</p></div>}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn" disabled={step === 1} onClick={() => setStep(step - 1)}>Voltar</button>{step < 5 ? <button className="btn primary" disabled={(step === 4 && !time)} onClick={() => setStep(step + 1)}>Continuar</button> : <button className="btn primary" onClick={confirmBooking}>Confirmar agendamento</button>}</div>
+    </div>
+  );
+}
+
+function ServiceStep({ services, selected, query, onQuery, onSelect }: { services: ReturnType<typeof readDb>["services"]; selected?: string; query: string; onQuery: (value: string) => void; onSelect: (id: string) => void }) {
+  const filtered = services
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .filter((service) => `${service.name} ${service.description}`.toLowerCase().includes(query.toLowerCase()));
+  const selectedService = services.find((service) => service.id === selected);
+
+  return (
+    <div className="booking-service-shell">
+      <aside className="booking-selected card card-pad">
+        <span className="eyebrow">Selecionado</span>
+        {selectedService ? (
+          <>
+            <ServiceIcon iconKey={selectedService.iconKey} />
+            <h2>{selectedService.name}</h2>
+            <p className="muted">{selectedService.description}</p>
+            <strong>{money.format(selectedService.price)} · {selectedService.durationMinutes} min</strong>
+          </>
+        ) : <p className="muted">Escolha um serviço para continuar.</p>}
+      </aside>
+      <section className="booking-service-list">
+        <label className="service-search booking-search">
+          <span>Buscar serviço</span>
+          <input className="input" placeholder="Corte, barba, luzes..." value={query} onChange={(event) => onQuery(event.target.value)} />
+        </label>
+        <div className="services-list">
+          {filtered.map((service) => (
+            <button className={`booking-service-row ${selected === service.id ? "selected" : ""}`} key={service.id} onClick={() => onSelect(service.id)}>
+              <ServiceIcon iconKey={service.iconKey} />
+              <span>
+                <strong>{service.name}</strong>
+                <small>{service.description}</small>
+              </span>
+              <em>{money.format(service.price)} · {service.durationMinutes} min</em>
+            </button>
+          ))}
+        </div>
+        {!filtered.length ? <p className="muted">Nenhum serviço encontrado.</p> : null}
+      </section>
     </div>
   );
 }
