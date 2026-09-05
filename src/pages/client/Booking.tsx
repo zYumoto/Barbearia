@@ -13,22 +13,38 @@ export default function Booking() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const db = readDb();
+  const serviceParam = params.get("service");
+  const initialComboExtras: Record<string, string[]> = {
+    "svc-combo": ["svc-barba"],
+    "svc-corte-barba-mt": ["svc-barba-mt"],
+    "svc-combo-toalha": ["svc-barba-toalha"],
+    "svc-corte-sobrancelha": ["svc-sobrancelha"],
+    "svc-corte-barba-sobrancelha": ["svc-barba", "svc-sobrancelha"],
+    "svc-careca-barba-sobrancelha": ["svc-barba", "svc-sobrancelha"]
+  };
+  const initialBaseService = serviceParam && initialComboExtras[serviceParam] ? "svc-corte" : serviceParam ?? user?.favoriteServiceId ?? db.services[0]?.id;
   const [step, setStep] = useState(1);
-  const [serviceId, setServiceId] = useState(params.get("service") ?? user?.favoriteServiceId ?? db.services[0]?.id);
+  const [serviceId, setServiceId] = useState(initialBaseService);
   const [serviceQuery, setServiceQuery] = useState("");
+  const [wantsExtras, setWantsExtras] = useState(Boolean(serviceParam && initialComboExtras[serviceParam]));
+  const [extraIds, setExtraIds] = useState<string[]>(serviceParam ? initialComboExtras[serviceParam] ?? [] : []);
   const [barberId, setBarberId] = useState<string | null>(params.get("barber") ?? user?.favoriteBarberId ?? null);
   const [date, setDate] = useState(nextBusinessDayIso());
   const [time, setTime] = useState("");
   const [done, setDone] = useState(false);
   const service = db.services.find((item) => item.id === serviceId)!;
+  const extras = db.services.filter((item) => extraIds.includes(item.id));
+  const bookingName = [service.name, ...extras.map((item) => item.name)].join(" + ");
+  const bookingPrice = service.price + extras.reduce((sum, item) => sum + item.price, 0);
+  const bookingDuration = service.durationMinutes + extras.reduce((sum, item) => sum + item.durationMinutes, 0);
   const barber = barberId ? db.barbers.find((item) => item.id === barberId) : null;
-  const slots = useMemo(() => getAvailableSlots({ date, barberId, duration: service.durationMinutes, workingHours: db.workingHours, appointments: db.appointments, daysOff: db.barberDaysOff }), [date, barberId, service.durationMinutes]);
+  const slots = useMemo(() => getAvailableSlots({ date, barberId, duration: bookingDuration, workingHours: db.workingHours, appointments: db.appointments, daysOff: db.barberDaysOff }), [date, barberId, bookingDuration]);
   const dates = nextBusinessDaysIso(12);
   function confirmBooking() {
-    createAppointment({ customerId: user!.id, barberId: barberId ?? db.barbers[0].id, serviceId: service.id, appointmentDate: date, startTime: time, endTime: addMinutes(time, service.durationMinutes), price: service.price, status: "confirmed" });
+    createAppointment({ customerId: user!.id, barberId: barberId ?? db.barbers[0].id, serviceId: service.id, appointmentDate: date, startTime: time, endTime: addMinutes(time, bookingDuration), price: bookingPrice, status: "confirmed", notes: extras.length ? `Adicionais: ${extras.map((item) => item.name).join(", ")}` : "Somente corte base" });
     setDone(true);
   }
-  if (done) return <div className="card card-pad" style={{ maxWidth: 680 }}><CheckCircle2 color="var(--ok)" size={44} /><h1 className="font-display">Agendamento confirmado!</h1><p className="muted">{service.name} em {date} às {time}.</p><button className="btn" onClick={() => downloadIcs(service.name, date, time, service.durationMinutes)}>Adicionar ao calendário</button> <Link className="btn primary" to="/app">Voltar ao dashboard</Link></div>;
+  if (done) return <div className="card card-pad" style={{ maxWidth: 680 }}><CheckCircle2 color="var(--ok)" size={44} /><h1 className="font-display">Agendamento confirmado!</h1><p className="muted">{bookingName} em {date} às {time}.</p><button className="btn" onClick={() => downloadIcs(bookingName, date, time, bookingDuration)}>Adicionar ao calendário</button> <Link className="btn primary" to="/app">Voltar ao dashboard</Link></div>;
   return (
     <div className="grid">
       <div><div className="eyebrow">Novo agendamento</div><h1 className="font-display">Escolha seu horário</h1></div>
@@ -37,25 +53,36 @@ export default function Booking() {
         <ServiceStep
           services={db.services.filter((item) => item.active)}
           selected={serviceId}
+          selectedExtras={extraIds}
+          wantsExtras={wantsExtras}
           query={serviceQuery}
           onQuery={setServiceQuery}
           onSelect={(id) => { setServiceId(id); setTime(""); }}
+          onWantsExtras={(value) => { setWantsExtras(value); if (!value) setExtraIds([]); }}
+          onToggleExtra={(id) => { setExtraIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]); setTime(""); }}
         />
       )}
       {step === 2 && <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}><button className={`card card-pad ${barberId === null ? "selected-card" : ""}`} onClick={() => setBarberId(null)}><h3>Qualquer profissional disponível</h3><p className="muted">A equipe escolhe o melhor encaixe.</p></button>{db.barbers.filter((item) => item.active).map((item) => <button className={`card card-pad ${barberId === item.id ? "selected-card" : ""}`} key={item.id} onClick={() => setBarberId(item.id)}><BarberPlaceholder name={item.name} /><h3>{item.name}</h3><p className="muted">{item.specialties.join(", ")}</p></button>)}</div>}
       {step === 3 && <Picker className="date-picker-grid" itemClassName="date-choice" items={dates.map((item) => ({ id: item, name: new Date(`${item}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) }))} selected={date} onSelect={(id) => { setDate(id); setTime(""); }} render={(item) => <h3>{item.name}</h3>} />}
       {step === 4 && <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))" }}>{slots.map((slot) => <button className={`btn ${time === slot.time ? "primary" : ""}`} disabled={slot.disabled} key={slot.time} onClick={() => setTime(slot.time)}>{slot.time}</button>)}</div>}
-      {step === 5 && <div className="card card-pad"><h2>Resumo</h2><p><strong>{service.name}</strong> com {barber?.name ?? "qualquer profissional"}</p><p className="muted">{date} às {time} · {money.format(service.price)}</p></div>}
+      {step === 5 && <div className="card card-pad"><h2>Resumo</h2><p><strong>{bookingName}</strong> com {barber?.name ?? "qualquer profissional"}</p><p className="muted">{date} às {time} · {bookingDuration} min · {money.format(bookingPrice)}</p>{extras.length ? <p className="muted">Adicionais: {extras.map((item) => item.name).join(", ")}</p> : <p className="muted">Somente corte base.</p>}</div>}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn" disabled={step === 1} onClick={() => setStep(step - 1)}>Voltar</button>{step < 5 ? <button className="btn primary" disabled={(step === 4 && !time)} onClick={() => setStep(step + 1)}>Continuar</button> : <button className="btn primary" onClick={confirmBooking}>Confirmar agendamento</button>}</div>
     </div>
   );
 }
 
-function ServiceStep({ services, selected, query, onQuery, onSelect }: { services: ReturnType<typeof readDb>["services"]; selected?: string; query: string; onQuery: (value: string) => void; onSelect: (id: string) => void }) {
-  const filtered = services
+function ServiceStep({ services, selected, selectedExtras, wantsExtras, query, onQuery, onSelect, onWantsExtras, onToggleExtra }: { services: ReturnType<typeof readDb>["services"]; selected?: string; selectedExtras: string[]; wantsExtras: boolean; query: string; onQuery: (value: string) => void; onSelect: (id: string) => void; onWantsExtras: (value: boolean) => void; onToggleExtra: (id: string) => void }) {
+  const baseIds = ["svc-corte", "svc-mt-club", "svc-mt-club-s", "svc-careca", "svc-careca-mt", "svc-kids", "svc-domicilio"];
+  const extraIds = ["svc-barba", "svc-barba-mt", "svc-barba-toalha", "svc-sobrancelha", "svc-pezinho", "svc-mascara-black", "svc-alisante", "svc-tintura", "svc-luzes", "svc-nevou"];
+  const baseServices = services
+    .filter((service) => baseIds.includes(service.id))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .filter((service) => `${service.name} ${service.description}`.toLowerCase().includes(query.toLowerCase()));
+  const extraServices = services.filter((service) => extraIds.includes(service.id)).sort((a, b) => a.sortOrder - b.sortOrder);
   const selectedService = services.find((service) => service.id === selected);
+  const extras = services.filter((service) => selectedExtras.includes(service.id));
+  const totalPrice = (selectedService?.price ?? 0) + extras.reduce((sum, item) => sum + item.price, 0);
+  const totalDuration = (selectedService?.durationMinutes ?? 0) + extras.reduce((sum, item) => sum + item.durationMinutes, 0);
 
   return (
     <div className="booking-service-shell">
@@ -66,17 +93,19 @@ function ServiceStep({ services, selected, query, onQuery, onSelect }: { service
             <ServiceIcon iconKey={selectedService.iconKey} />
             <h2>{selectedService.name}</h2>
             <p className="muted">{selectedService.description}</p>
-            <strong>{money.format(selectedService.price)} · {selectedService.durationMinutes} min</strong>
+            {extras.length ? <div className="selected-extras">{extras.map((item) => <span className="badge" key={item.id}>{item.name}</span>)}</div> : <span className="badge">Somente corte base</span>}
+            <strong>{money.format(totalPrice)} · {totalDuration} min</strong>
           </>
         ) : <p className="muted">Escolha um serviço para continuar.</p>}
       </aside>
       <section className="booking-service-list">
         <label className="service-search booking-search">
-          <span>Buscar serviço</span>
-          <input className="input" placeholder="Corte, barba, luzes..." value={query} onChange={(event) => onQuery(event.target.value)} />
+          <span>Buscar corte</span>
+          <input className="input" placeholder="Corte, careca, kids..." value={query} onChange={(event) => onQuery(event.target.value)} />
         </label>
+        <h3 className="booking-subtitle">1. Escolha o corte base</h3>
         <div className="services-list">
-          {filtered.map((service) => (
+          {baseServices.map((service) => (
             <button className={`booking-service-row ${selected === service.id ? "selected" : ""}`} key={service.id} onClick={() => onSelect(service.id)}>
               <ServiceIcon iconKey={service.iconKey} />
               <span>
@@ -87,7 +116,30 @@ function ServiceStep({ services, selected, query, onQuery, onSelect }: { service
             </button>
           ))}
         </div>
-        {!filtered.length ? <p className="muted">Nenhum serviço encontrado.</p> : null}
+        {!baseServices.length ? <p className="muted">Nenhum corte encontrado.</p> : null}
+        <div className="extras-question card card-pad">
+          <div>
+            <h3>Quer adicionar mais alguma coisa?</h3>
+            <p className="muted">Barba, sobrancelha, toalha quente ou tratamentos podem entrar no mesmo horário.</p>
+          </div>
+          <div className="segmented">
+            <button className={`btn ${!wantsExtras ? "primary" : ""}`} onClick={() => onWantsExtras(false)}>Só corte</button>
+            <button className={`btn ${wantsExtras ? "primary" : ""}`} onClick={() => onWantsExtras(true)}>Adicionar</button>
+          </div>
+        </div>
+        {wantsExtras ? (
+          <>
+            <h3 className="booking-subtitle">2. Escolha os adicionais</h3>
+            <div className="addons-grid">
+              {extraServices.map((service) => (
+                <button className={`addon-chip ${selectedExtras.includes(service.id) ? "selected" : ""}`} key={service.id} onClick={() => onToggleExtra(service.id)}>
+                  <span>{service.name}</span>
+                  <small>{money.format(service.price)} · {service.durationMinutes} min</small>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
       </section>
     </div>
   );

@@ -131,8 +131,10 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
 .booking-selected { position: sticky; top: 96px; display: grid; gap: 12px; }
 .booking-selected h2 { margin: 0; }
 .booking-selected strong { color: var(--gold-2); }
+.selected-extras { display: flex; flex-wrap: wrap; gap: 6px; }
 .booking-search { max-width: none; margin: 0 0 12px; }
 .booking-service-list { display: grid; gap: 12px; }
+.booking-subtitle { margin: 6px 0 2px; color: #f2f2f2; font-size: .92rem; text-transform: uppercase; letter-spacing: .04em; }
 .booking-service-row {
   width: 100%;
   display: grid;
@@ -152,6 +154,28 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
 .booking-service-row strong { display: block; margin-bottom: 3px; }
 .booking-service-row small { display: block; color: var(--muted); line-height: 1.35; }
 .booking-service-row em { color: var(--gold-2); font-style: normal; font-weight: 900; white-space: nowrap; }
+.extras-question { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px; margin-top: 6px; }
+.extras-question h3 { margin: 0 0 4px; }
+.extras-question p { margin: 0; }
+.segmented { display: inline-flex; gap: 6px; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.025); }
+.segmented .btn { min-width: 98px; padding: 9px 12px; }
+.addons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.addon-chip {
+  display: grid;
+  gap: 4px;
+  min-height: 74px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
+  color: var(--text);
+  padding: 12px;
+  transition: .2s ease;
+}
+.addon-chip:hover { border-color: rgba(200,164,93,.48); background: rgba(200,164,93,.07); transform: translateY(-1px); }
+.addon-chip.selected { border-color: var(--gold); background: rgba(200,164,93,.12); }
+.addon-chip span { font-weight: 900; }
+.addon-chip small { color: var(--muted); font-weight: 800; }
 .cuts-grid { display: grid; grid-template-columns: 1.1fr .9fr .9fr; grid-auto-rows: 230px; gap: 16px; }
 .cut-card { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #111; min-height: 220px; box-shadow: 0 24px 80px rgba(0,0,0,.28); }
 .cut-card img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.92) contrast(1.06); transition: transform .55s ease, filter .55s ease; }
@@ -230,6 +254,9 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
   .service-meta { justify-items: start; }
   .booking-service-shell { grid-template-columns: 1fr; }
   .booking-selected { position: static; }
+  .extras-question { display: grid; }
+  .segmented { width: 100%; }
+  .segmented .btn { flex: 1; min-width: 0; }
   .booking-service-row { grid-template-columns: 42px 1fr; }
   .booking-service-row em { grid-column: 2; white-space: normal; }
 }
