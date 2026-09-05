@@ -6,6 +6,7 @@ import ServiceIcon from "../components/common/ServiceIcon";
 import Footer from "../components/layout/Footer";
 import PublicNavbar from "../components/layout/PublicNavbar";
 import heroImage from "../assets/barber-club-hero.png";
+import { cutPhotos } from "../lib/gallery";
 import { money } from "../lib/format";
 import { readDb } from "../lib/store";
 
@@ -88,6 +89,22 @@ export default function Landing() {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{barber.specialties.map((item) => <span className="badge" key={item}>{item}</span>)}</div>
                   <p><Star size={16} fill="var(--gold-2)" color="var(--gold-2)" /> {barber.rating} · {barber.appointmentsCount} atendimentos</p>
                   <Link className="btn primary" to={`/app/agendamento/novo?barber=${barber.id}`}>Agendar com {barber.name.split(" ")[0]}</Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="section" id="cortes">
+          <div className="container">
+            <SectionHeading eyebrow="Cortes reais" title="Modelos que já passaram pela cadeira" text="Referências de acabamento para você escolher o próximo estilo antes de agendar." />
+            <div className="cuts-grid">
+              {cutPhotos.map((photo, index) => (
+                <article className={`cut-card cut-card-${index + 1}`} key={photo.title}>
+                  <img src={photo.src} alt={photo.title} />
+                  <div>
+                    <strong>{photo.title}</strong>
+                    <span>{photo.description}</span>
+                  </div>
                 </article>
               ))}
             </div>

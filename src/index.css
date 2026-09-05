@@ -118,6 +118,15 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
 .date-choice { min-height: 86px; display: grid; place-items: center; padding: 16px; }
 .date-choice h3 { margin: 0; font-size: 1rem; text-transform: capitalize; }
 .service-strip { display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 24px; }
+.cuts-grid { display: grid; grid-template-columns: 1.1fr .9fr .9fr; grid-auto-rows: 230px; gap: 16px; }
+.cut-card { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #111; min-height: 220px; box-shadow: 0 24px 80px rgba(0,0,0,.28); }
+.cut-card img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.92) contrast(1.06); transition: transform .55s ease, filter .55s ease; }
+.cut-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.78)); pointer-events: none; }
+.cut-card div { position: absolute; z-index: 2; left: 18px; right: 18px; bottom: 16px; display: grid; gap: 4px; }
+.cut-card strong { font-size: 1rem; }
+.cut-card span { color: #d5d5d5; font-size: .86rem; }
+.cut-card:hover img { transform: scale(1.055); filter: saturate(1.04) contrast(1.1); }
+.cut-card-1 { grid-row: span 2; }
 .reviews-track { display: flex; gap: 18px; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .review-card { min-width: 310px; animation: review-marquee 38s linear infinite; }
 .reviews-track:hover .review-card { animation-play-state: paused; }
@@ -180,6 +189,8 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
   .portrait-two { right: 108px; bottom: 22px; animation-name: portrait-two-float-mobile; }
   .browser-title { width: 240px; left: 22px; bottom: 26px; }
   .hero-contact { justify-content: center; }
+  .cuts-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 190px; }
+  .cut-card-1 { grid-column: span 2; grid-row: span 1; }
 }
 
 @keyframes mobile-menu-in {

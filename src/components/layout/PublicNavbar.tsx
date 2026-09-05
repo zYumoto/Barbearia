@@ -15,6 +15,7 @@ export default function PublicNavbar() {
     ["#top", "Início"],
     ["#servicos", "Serviços"],
     ["#barbeiros", "Barbeiros"],
+    ["#cortes", "Cortes"],
     ["#sobre", "Sobre"],
     ["#avaliacoes", "Avaliações"],
     ["#contato", "Contato"]

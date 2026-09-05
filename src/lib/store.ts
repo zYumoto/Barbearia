@@ -1,7 +1,7 @@
 import { addDaysIso, addMinutes, nextBusinessDayIso, todayIso } from "./format";
 import type { Appointment, AppointmentStatus, Barber, Database, Payment, Profile, Service } from "./types";
 
-const DB_KEY = "mt-barbearia-db-v1";
+const DB_KEY = "mt-barbearia-db-v2";
 const SESSION_KEY = "mt-barbearia-session";
 
 const adminId = "admin-fixed";
@@ -115,12 +115,11 @@ function seed(): Database {
     appointments: [...completedAppointments, futureAppointment],
     customerHistory,
     reviews: [
-      ["Gabriel Santos", 5, "Melhor barbearia que já fui. Ambiente muito bonito e atendimento excelente."],
       ["Cliente Google", 5, "Meu pai cortou o cabelo com ele e gostou muito!"],
       ["Cliente Google", 5, "Parabéns pelo trampo irmão."],
-      ["Matheus Lima", 5, "Agendei pelo celular e fui atendido no horário. Barba muito bem feita."],
-      ["Renato Alves", 4.8, "A equipe entende o estilo que você quer antes de começar."],
-      ["Felipe Rocha", 5, "Meu lugar fixo para corte e barba. Atendimento de primeira."]
+      ["Mt Barbearia", 5, "Corte na régua, acabamento limpo e atendimento direto, do jeito que precisa ser."],
+      ["Cliente da casa", 5, "Degradê bem feito e ambiente confortável na Areia Branca."],
+      ["Cliente da casa", 5, "Volto sempre pelo capricho no corte e pela pontualidade."]
     ].map(([authorName, rating, comment], index) => ({ id: `rev-${index}`, authorName: authorName as string, rating: rating as number, comment: comment as string, createdAt: now })),
     workingHours,
     barberDaysOff: [{ id: "off-rafael", barberId: "barber-rafael", date: nextBusinessDayIso(5), reason: "Folga programada" }],
