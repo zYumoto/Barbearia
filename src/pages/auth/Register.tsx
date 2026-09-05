@@ -1,11 +1,12 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import { AuthShell } from "./Login";
 
 export default function Register() {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [error, setError] = useState("");
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,7 +18,12 @@ export default function Register() {
     if (!data.get("terms")) return setError("Aceite os termos para continuar.");
     try {
       signUp({ fullName: String(data.get("fullName")), email: String(data.get("email")), password, phone: String(data.get("phone")), birthDate: String(data.get("birthDate")), favoriteBarberId: undefined, favoriteServiceId: undefined });
-      navigate("/app");
+      const service = params.get("service");
+      const barber = params.get("barber");
+      const query = new URLSearchParams();
+      if (service) query.set("service", service);
+      if (barber) query.set("barber", barber);
+      navigate(query.size ? `/app/agendamento/novo?${query.toString()}` : "/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível cadastrar.");
     }

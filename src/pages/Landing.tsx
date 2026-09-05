@@ -8,17 +8,20 @@ import Footer from "../components/layout/Footer";
 import PublicNavbar from "../components/layout/PublicNavbar";
 import heroImage from "../assets/barber-club-hero.png";
 import { cutPhotos } from "../lib/gallery";
+import { useAuth } from "../lib/auth";
 import { money } from "../lib/format";
 import { readDb } from "../lib/store";
 
 export default function Landing() {
   const db = readDb();
+  const { user } = useAuth();
   const [serviceQuery, setServiceQuery] = useState("");
   const activeServices = db.services.filter((service) => service.active).sort((a, b) => a.sortOrder - b.sortOrder);
   const visibleServices = activeServices.filter((service) => `${service.name} ${service.description}`.toLowerCase().includes(serviceQuery.toLowerCase()));
   const popularServices = activeServices.slice(0, 3);
   const visiblePopularServices = popularServices.filter((service) => visibleServices.some((item) => item.id === service.id));
   const otherServices = visibleServices.filter((service) => !popularServices.some((item) => item.id === service.id));
+  const reserveTo = (query = "") => user?.role === "customer" ? `/app/agendamento/novo${query}` : `/cadastro${query}`;
   return (
     <div className="page">
       <PublicNavbar />
@@ -32,7 +35,7 @@ export default function Landing() {
               <h1>Santos' best barber.</h1>
               <p>Cortes precisos, barba impecável e uma experiência premium feita para o seu estilo não depender da ocasião.</p>
               <div className="hero-actions hero-reveal-delay-2">
-                <Link className="btn primary" to="/cadastro">Book today <ChevronRight size={18} /></Link>
+                <Link className="btn primary" to={reserveTo()}>Book today <ChevronRight size={18} /></Link>
                 <a className="btn ghost" href="#servicos">Ver serviços</a>
               </div>
               <div className="hero-facts hero-reveal-delay-3">
@@ -74,8 +77,8 @@ export default function Landing() {
             <div className="service-strip">
               {["Wi-Fi", "Programa de Fidelidade", "Barba na toalha", "Corte kids", "Alisante", "Tintura", "Luzes", "Nevou"].map((item) => <span className="badge" key={item}>{item}</span>)}
             </div>
-            {visiblePopularServices.length ? <><h3 className="service-group-title">Serviços populares</h3><ServiceGrid services={visiblePopularServices} /></> : null}
-            {otherServices.length ? <><h3 className="service-group-title">Outros serviços</h3><ServiceGrid services={otherServices} compact /></> : null}
+            {visiblePopularServices.length ? <><h3 className="service-group-title">Serviços populares</h3><ServiceGrid services={visiblePopularServices} reserveTo={reserveTo} /></> : null}
+            {otherServices.length ? <><h3 className="service-group-title">Outros serviços</h3><ServiceGrid services={otherServices} compact reserveTo={reserveTo} /></> : null}
             {!visibleServices.length ? <p className="muted">Nenhum serviço encontrado.</p> : null}
           </div>
         </section>
@@ -90,7 +93,7 @@ export default function Landing() {
                   <p className="muted">{barber.bio}</p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{barber.specialties.map((item) => <span className="badge" key={item}>{item}</span>)}</div>
                   <p><Star size={16} fill="var(--gold-2)" color="var(--gold-2)" /> {barber.rating} · {barber.appointmentsCount} atendimentos</p>
-                  <Link className="btn primary" to={`/app/agendamento/novo?barber=${barber.id}`}>Agendar com {barber.name.split(" ")[0]}</Link>
+                  <Link className="btn primary" to={reserveTo(`?barber=${barber.id}`)}>Agendar com {barber.name.split(" ")[0]}</Link>
                 </article>
               ))}
             </div>
@@ -147,7 +150,7 @@ export default function Landing() {
             <h2 className="font-display" style={{ fontSize: "clamp(2.3rem, 5vw, 4.5rem)", margin: "0 0 12px" }}>Pronto para renovar o visual?</h2>
             <p className="muted" style={{ fontSize: "1.1rem" }}>Escolha seu horário e deixe o resto com a gente.</p>
             <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap", marginTop: 20 }}>
-              <Link className="btn primary" style={{ padding: "15px 24px" }} to="/cadastro">Agendar agora</Link>
+              <Link className="btn primary" style={{ padding: "15px 24px" }} to={reserveTo()}>Agendar agora</Link>
               <a className="btn" href="tel:+5513988592508">Ligar</a>
               <a className="btn ghost" href="https://www.instagram.com/mtbarbearia__/" target="_blank" rel="noreferrer">Instagram</a>
             </div>
@@ -159,7 +162,7 @@ export default function Landing() {
   );
 }
 
-function ServiceGrid({ services, compact = false }: { services: ReturnType<typeof readDb>["services"]; compact?: boolean }) {
+function ServiceGrid({ services, compact = false, reserveTo }: { services: ReturnType<typeof readDb>["services"]; compact?: boolean; reserveTo: (query?: string) => string }) {
   return (
     <div className={compact ? "services-list" : "grid"} style={compact ? undefined : { gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
       {services.map((service) => (
@@ -173,7 +176,7 @@ function ServiceGrid({ services, compact = false }: { services: ReturnType<typeo
             <strong>{money.format(service.price)}</strong>
             <span>{service.durationMinutes >= 60 ? `${Math.floor(service.durationMinutes / 60)}h${service.durationMinutes % 60 ? ` ${service.durationMinutes % 60}min` : ""}` : `${service.durationMinutes}min`}</span>
           </div>
-          <Link className="btn primary" to={`/app/agendamento/novo?service=${service.id}`}>Reservar</Link>
+          <Link className="btn primary" to={reserveTo(`?service=${service.id}`)}>Reservar</Link>
         </article>
       ))}
     </div>

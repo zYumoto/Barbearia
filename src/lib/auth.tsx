@@ -57,7 +57,7 @@ export function useAuth() {
 export function RequireAuth() {
   const { user } = useAuth();
   const location = useLocation();
-  return user ? <Outlet /> : <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  return user ? <Outlet /> : <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
 }
 
 export function RequireAdmin() {
