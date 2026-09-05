@@ -117,7 +117,16 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
 .date-picker-grid { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)) !important; }
 .date-choice { min-height: 86px; display: grid; place-items: center; padding: 16px; }
 .date-choice h3 { margin: 0; font-size: 1rem; text-transform: capitalize; }
+.service-search { display: grid; gap: 8px; max-width: 420px; margin: -6px 0 18px; color: var(--muted); font-weight: 800; }
 .service-strip { display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 24px; }
+.service-group-title { margin: 28px 0 14px; font-size: 1rem; text-transform: uppercase; color: #f0f0f0; letter-spacing: .04em; }
+.services-list { display: grid; gap: 10px; }
+.service-row { display: grid; grid-template-columns: 48px 1fr auto auto; gap: 16px; align-items: center; padding: 16px; }
+.service-row h3 { margin: 0 0 4px; font-size: 1rem; }
+.service-row p { margin: 0; font-size: .88rem; }
+.service-meta { display: grid; gap: 2px; justify-items: end; min-width: 92px; }
+.service-meta strong { color: var(--gold-2); }
+.service-meta span { color: var(--muted); font-size: .84rem; font-weight: 800; }
 .cuts-grid { display: grid; grid-template-columns: 1.1fr .9fr .9fr; grid-auto-rows: 230px; gap: 16px; }
 .cut-card { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #111; min-height: 220px; box-shadow: 0 24px 80px rgba(0,0,0,.28); }
 .cut-card img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.92) contrast(1.06); transition: transform .55s ease, filter .55s ease; }
@@ -191,6 +200,9 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
   .hero-contact { justify-content: center; }
   .cuts-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 190px; }
   .cut-card-1 { grid-column: span 2; grid-row: span 1; }
+  .service-row { grid-template-columns: 44px 1fr; }
+  .service-row .btn { grid-column: 1 / -1; width: 100%; }
+  .service-meta { justify-items: start; }
 }
 
 @keyframes mobile-menu-in {

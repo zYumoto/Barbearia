@@ -1,7 +1,7 @@
 import { addDaysIso, addMinutes, nextBusinessDayIso, todayIso } from "./format";
 import type { Appointment, AppointmentStatus, Barber, Database, Payment, Profile, Service } from "./types";
 
-const DB_KEY = "mt-barbearia-db-v2";
+const DB_KEY = "mt-barbearia-db-v3";
 const SESSION_KEY = "mt-barbearia-session";
 
 const adminId = "admin-fixed";
@@ -14,12 +14,29 @@ function id(prefix: string) {
 function seed(): Database {
   const now = new Date().toISOString();
   const services: Service[] = [
-    ["svc-corte", "Corte Masculino", "Corte personalizado de acordo com seu estilo e formato de rosto.", 45, 40, "scissors"],
-    ["svc-barba", "Barba", "Modelagem completa da barba, aparo e acabamento profissional.", 35, 30, "razor"],
-    ["svc-combo", "Corte + Barba", "Experiência completa para renovar completamente seu visual.", 70, 60, "sparkles"],
-    ["svc-premium", "Corte Premium", "Consultoria de estilo, corte com tesoura/navalha, lavagem e finalização.", 65, 50, "crown"],
-    ["svc-sobrancelha", "Sobrancelha", "Limpeza e alinhamento para valorizar a expressão.", 20, 15, "eye"],
-    ["svc-pigmentacao", "Pigmentação de Barba", "Correção sutil de falhas e definição.", 40, 30, "brush"]
+    ["svc-corte", "Corte", "Corte masculino personalizado com acabamento na régua.", 40, 40, "scissors"],
+    ["svc-combo", "Corte+barba", "Combo completo para cabelo e barba no padrão Mt.", 70, 50, "sparkles"],
+    ["svc-mt-club", "Corte mt.''club", "Corte assinatura da casa com finalização limpa.", 35, 40, "crown"],
+    ["svc-corte-barba-mt", "Corte barba mt.club", "Corte e manutenção de barba com acabamento profissional.", 55, 50, "razor"],
+    ["svc-mt-club-s", "Corte mt club s", "Corte rápido da linha Mt Club S.", 30, 35, "scissors"],
+    ["svc-careca-mt", "Corte careca mt.club", "Raspado/careca com acabamento alinhado.", 20, 20, "scissors"],
+    ["svc-barba-mt", "Barba mt.club", "Modelagem de barba da casa.", 25, 30, "razor"],
+    ["svc-combo-toalha", "Corte + barba na toalha", "Corte com barba finalizada na toalha quente.", 90, 30, "sparkles"],
+    ["svc-corte-sobrancelha", "Corte+sobrancelha", "Corte com alinhamento de sobrancelha.", 50, 45, "eye"],
+    ["svc-corte-barba-sobrancelha", "Corte + barba + sobrancelha", "Pacote completo para renovar cabelo, barba e expressão.", 80, 80, "sparkles"],
+    ["svc-careca-barba-sobrancelha", "Corte careca+barba+sobrancelha", "Careca, barba e sobrancelha em um combo direto.", 70, 50, "sparkles"],
+    ["svc-careca", "Corte careca", "Raspado limpo com acabamento preciso.", 30, 20, "scissors"],
+    ["svc-kids", "Corte kids", "Criança até 6 anos.", 50, 40, "scissors"],
+    ["svc-domicilio", "Corte a domicílio", "Atendimento externo sob agendamento.", 200, 30, "crown"],
+    ["svc-pezinho", "Pezinho", "Acabamento de nuca e contorno.", 20, 10, "scissors"],
+    ["svc-sobrancelha", "Sobrancelha", "Limpeza e alinhamento de sobrancelha.", 10, 5, "eye"],
+    ["svc-barba", "Barba", "Barba tradicional com acabamento profissional.", 30, 25, "razor"],
+    ["svc-barba-toalha", "Barba na toalha", "Barba com toalha quente e finalização.", 40, 35, "razor"],
+    ["svc-mascara-black", "Máscara black", "Tratamento facial com máscara black.", 35, 30, "brush"],
+    ["svc-alisante", "Alisante", "Aplicação de alisante para finalização do cabelo.", 40, 20, "brush"],
+    ["svc-tintura", "Tintura", "Coloração do cabelo.", 40, 30, "brush"],
+    ["svc-luzes", "Luzes", "A partir do valor base, depende da altura do cabelo.", 80, 60, "brush"],
+    ["svc-nevou", "Nevou", "A partir do valor base, depende da altura do cabelo.", 150, 90, "sparkles"]
   ].map(([serviceId, name, description, price, durationMinutes, iconKey], index) => ({
     id: serviceId as string,
     name: name as string,
@@ -115,11 +132,15 @@ function seed(): Database {
     appointments: [...completedAppointments, futureAppointment],
     customerHistory,
     reviews: [
-      ["Cliente Google", 5, "Meu pai cortou o cabelo com ele e gostou muito!"],
-      ["Cliente Google", 5, "Parabéns pelo trampo irmão."],
-      ["Mt Barbearia", 5, "Corte na régua, acabamento limpo e atendimento direto, do jeito que precisa ser."],
-      ["Cliente da casa", 5, "Degradê bem feito e ambiente confortável na Areia Branca."],
-      ["Cliente da casa", 5, "Volto sempre pelo capricho no corte e pela pontualidade."]
+      ["Lucas", 5, "top"],
+      ["Paulo", 5, "Excelente atendimento no corte e barba na toalha."],
+      ["Bruna", 5, "Profissional top, amei o corte do meu filho."],
+      ["Alef", 5, "O melhor da baixada!!!"],
+      ["Pedro", 5, "Sem novidade, o melhor atendimento."],
+      ["Wellison", 5, "Excelente atendimento e muito bom o corte."],
+      ["RODRIGO", 5, "Melhor atendimento e ambiente top demais!!"],
+      ["Leonardo", 5, "Atendimento pontual, café oferecido, ambiente limpo e organizado. Excelente profissional."],
+      ["Márcia", 5, "Show, nunca tinha cortado meu cabelo em uma barbearia, mas amei. O Matheus é super atencioso."]
     ].map(([authorName, rating, comment], index) => ({ id: `rev-${index}`, authorName: authorName as string, rating: rating as number, comment: comment as string, createdAt: now })),
     workingHours,
     barberDaysOff: [{ id: "off-rafael", barberId: "barber-rafael", date: nextBusinessDayIso(5), reason: "Folga programada" }],

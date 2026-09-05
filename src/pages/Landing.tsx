@@ -1,4 +1,5 @@
 import { CalendarCheck, ChevronRight, MapPin, Phone, Star, Users } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import BarberPlaceholder from "../components/common/BarberPlaceholder";
 import SectionHeading from "../components/common/SectionHeading";
@@ -12,6 +13,12 @@ import { readDb } from "../lib/store";
 
 export default function Landing() {
   const db = readDb();
+  const [serviceQuery, setServiceQuery] = useState("");
+  const activeServices = db.services.filter((service) => service.active).sort((a, b) => a.sortOrder - b.sortOrder);
+  const visibleServices = activeServices.filter((service) => `${service.name} ${service.description}`.toLowerCase().includes(serviceQuery.toLowerCase()));
+  const popularServices = activeServices.slice(0, 3);
+  const visiblePopularServices = popularServices.filter((service) => visibleServices.some((item) => item.id === service.id));
+  const otherServices = visibleServices.filter((service) => !popularServices.some((item) => item.id === service.id));
   return (
     <div className="page">
       <PublicNavbar />
@@ -29,9 +36,9 @@ export default function Landing() {
                 <a className="btn ghost" href="#servicos">Ver serviços</a>
               </div>
               <div className="hero-facts hero-reveal-delay-3">
-                <span><Star size={15} /> 5,0 Google</span>
+                <span><Star size={15} /> 5,0 · 23 avaliações</span>
                 <span><Users size={15} /> +1.500 clientes</span>
-                <span><CalendarCheck size={15} /> desde 2020</span>
+                <span><CalendarCheck size={15} /> since 2018</span>
               </div>
             </div>
             <div className="device-collage hero-reveal-delay-1" aria-label="Prévia visual premium da Mt Barbearia em dispositivos">
@@ -59,22 +66,17 @@ export default function Landing() {
         </section>
         <section className="section" id="servicos">
           <div className="container">
-            <SectionHeading eyebrow="Serviços" title="Escolha seu estilo" text="Serviços pensados para cuidar da sua aparência do jeito que você merece." />
+            <SectionHeading eyebrow="Serviços" title="Escolha seu estilo" text="Serviços reais da Mt Barbearia, com preços e tempos médios para reservar sem enrolação." />
+            <label className="service-search">
+              <span>Buscar serviços</span>
+              <input className="input" placeholder="Corte, barba, luzes..." value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} />
+            </label>
             <div className="service-strip">
-              {["Coloração", "Alisamento", "Barba com navalha", "Toalha quente", "Cabelos cacheados", "Corte militar", "Cortes infantis", "Shampoo e condicionador"].map((item) => <span className="badge" key={item}>{item}</span>)}
+              {["Wi-Fi", "Programa de Fidelidade", "Barba na toalha", "Corte kids", "Alisante", "Tintura", "Luzes", "Nevou"].map((item) => <span className="badge" key={item}>{item}</span>)}
             </div>
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
-              {db.services.filter((service) => service.active).map((service) => (
-                <article className="card card-pad lift-card reveal-on-load" style={{ animationDelay: `${service.sortOrder * 70}ms` }} key={service.id}>
-                  <ServiceIcon iconKey={service.iconKey} />
-                  <h3>{service.name}</h3>
-                  <p className="muted">{service.description}</p>
-                  <strong style={{ color: "var(--gold-2)" }}>{money.format(service.price)}</strong>
-                  <span className="muted"> · {service.durationMinutes} min</span>
-                  <div style={{ marginTop: 16 }}><Link className="btn primary" to={`/app/agendamento/novo?service=${service.id}`}>Agendar</Link></div>
-                </article>
-              ))}
-            </div>
+            {visiblePopularServices.length ? <><h3 className="service-group-title">Serviços populares</h3><ServiceGrid services={visiblePopularServices} /></> : null}
+            {otherServices.length ? <><h3 className="service-group-title">Outros serviços</h3><ServiceGrid services={otherServices} compact /></> : null}
+            {!visibleServices.length ? <p className="muted">Nenhum serviço encontrado.</p> : null}
           </div>
         </section>
         <section className="section" id="barbeiros" style={{ background: "#0d0d0d" }}>
@@ -120,7 +122,7 @@ export default function Landing() {
         </section>
         <section className="section" id="avaliacoes" style={{ background: "#0d0d0d" }}>
           <div className="container">
-            <SectionHeading eyebrow="Avaliações" title="O acabamento fala, os clientes confirmam" />
+            <SectionHeading eyebrow="Avaliações" title="5,0 com base em 23 avaliações" text="Comentários reais de clientes confirmados da Mt Barbearia." />
             <div className="reviews-track">
               {[...db.reviews, ...db.reviews].map((review, index) => <article className="card card-pad review-card" key={`${review.id}-${index}`}><p>{review.comment}</p><strong>{review.authorName}</strong><div style={{ color: "var(--gold-2)" }}>★ {review.rating}</div></article>)}
             </div>
@@ -133,9 +135,9 @@ export default function Landing() {
               <Link className="btn primary" to="/login">Entrar na área do cliente</Link>
             </div>
             <div className="grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <div className="card card-pad"><strong className="font-display" style={{ fontSize: "2.1rem" }}>6</strong><p className="muted">serviços</p></div>
+              <div className="card card-pad"><strong className="font-display" style={{ fontSize: "2.1rem" }}>{activeServices.length}</strong><p className="muted">serviços</p></div>
               <div className="card card-pad"><strong className="font-display" style={{ fontSize: "2.1rem" }}>+3.000</strong><p className="muted">cortes realizados</p></div>
-              <div className="card card-pad"><strong className="font-display" style={{ fontSize: "2.1rem" }}>5,0</strong><p className="muted">avaliação no Google</p></div>
+              <div className="card card-pad"><strong className="font-display" style={{ fontSize: "2.1rem" }}>5,0</strong><p className="muted">23 avaliações</p></div>
               <div className="card card-pad"><strong className="font-display" style={{ fontSize: "2.1rem" }}>4</strong><p className="muted">barbeiros profissionais</p></div>
             </div>
           </div>
@@ -153,6 +155,27 @@ export default function Landing() {
         </section>
       </main>
       <Footer />
+    </div>
+  );
+}
+
+function ServiceGrid({ services, compact = false }: { services: ReturnType<typeof readDb>["services"]; compact?: boolean }) {
+  return (
+    <div className={compact ? "services-list" : "grid"} style={compact ? undefined : { gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+      {services.map((service) => (
+        <article className={`card card-pad lift-card reveal-on-load ${compact ? "service-row" : ""}`} style={{ animationDelay: `${Math.min(service.sortOrder, 10) * 45}ms` }} key={service.id}>
+          <ServiceIcon iconKey={service.iconKey} />
+          <div className="service-content">
+            <h3>{service.name}</h3>
+            <p className="muted">{service.description}</p>
+          </div>
+          <div className="service-meta">
+            <strong>{money.format(service.price)}</strong>
+            <span>{service.durationMinutes >= 60 ? `${Math.floor(service.durationMinutes / 60)}h${service.durationMinutes % 60 ? ` ${service.durationMinutes % 60}min` : ""}` : `${service.durationMinutes}min`}</span>
+          </div>
+          <Link className="btn primary" to={`/app/agendamento/novo?service=${service.id}`}>Reservar</Link>
+        </article>
+      ))}
     </div>
   );
 }
